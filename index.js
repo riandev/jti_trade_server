@@ -11,7 +11,7 @@ app.use(express.static("../jti_trade_client/build"));
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false, limit: "5000mb" }));
 app.use(bodyParser.json({ limit: "5000mb" }));
-const port = 5056;
+const port = 5090;
 
 const MongoClient = require("mongodb").MongoClient;
 // const MongoClient = require("mongodb").MongoClient;
@@ -335,6 +335,69 @@ client.connect((err) => {
                 let datas = {};
                 (datas.id = d._id),
                   (datas.diid = d.DIID),
+                  (datas.data_date = d.data_date),
+                  (datas.r_name = d.r_name),
+                  (datas.Consumer_No = d.Consumer_No);
+                return datas;
+              }),
+          });
+        }
+        res.send(output);
+      });
+  });
+  //Test Regen
+  app.get("/regenerateDemo", (req, res) => {
+    const regenDate = req.query.regenDate;
+    console.log(regenDate);
+    leadsCollection
+      .aggregate([
+        {
+          $match: {
+            $and: [{ Data_Status: "Valid_Data" }],
+          },
+        },
+      ])
+      .toArray((err, results) => {
+        let output = [];
+        let users = _.groupBy(
+          JSON.parse(JSON.stringify(results)),
+          function (d) {
+            return d.ba_id;
+          }
+        );
+        for (user in users) {
+          output.push({
+            // userId: user,
+            // consumers: users[user],
+            // countByUser: users[user].length,
+            // callDone: users[user].filter(
+            //   (x) => x.answer10 === "yes" || x.answer10 === "no"
+            // ).length,
+            callDone: users[user].filter(
+              (x) => x.answer1 === "yes" || x.answer1 === "no"
+            ).length,
+            newLead: users[user]
+              .filter(
+                (x) =>
+                  x.kaj_kormu === "kaj_kormu" &&
+                  (x.answer1 === null || x.answer1 === undefined)
+              )
+              .slice(
+                0,
+                users[user].filter(
+                  (x) => x.answer1 === "yes" || x.answer1 === "no"
+                ).length < 10
+                  ? 10 -
+                      users[user].filter(
+                        (x) => x.answer1 === "yes" || x.answer1 === "no"
+                      ).length
+                  : 0
+              )
+              .map((d) => {
+                let datas = {};
+                (datas.id = d._id),
+                  (datas.id = d.id),
+                  (datas.diid = d.diid),
                   (datas.data_date = d.data_date),
                   (datas.r_name = d.r_name),
                   (datas.Consumer_No = d.Consumer_No);
